@@ -299,7 +299,7 @@
 
     .day-hd {
       display: flex;
-      align-items: baseline;
+      align-items: center;
       flex-wrap: wrap;
       gap: var(--s2);
       padding-bottom: var(--s3);
@@ -309,24 +309,37 @@
 
     .day-name {
       font-family: 'Cormorant Garamond', Georgia, serif;
-      font-size: clamp(1.1rem, 4.5vw, 1.45rem);
+      font-size: clamp(1.05rem, 4.5vw, 1.4rem);
       font-weight: 400;
-      color: var(--text-hi);
+      color: var(--text-mid);
       letter-spacing: 0.03em;
     }
 
-    /* Giorno corrente: nome oro */
+    /* Giorno corrente: nome oro + barra sinistra */
     .day--oggi .day-name {
       color: var(--gold);
     }
 
     .day--oggi .day-hd {
       border-bottom-color: var(--gold-dim);
+      padding-left: var(--s3);
+      position: relative;
+    }
+
+    .day--oggi .day-hd::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 2px;
+      bottom: 6px;
+      width: 2px;
+      background: var(--gold);
+      border-radius: 2px;
     }
 
     /* Chip "Oggi" */
     .chip-oggi {
-      font-size: 0.60rem;
+      font-size: 0.58rem;
       font-weight: 600;
       letter-spacing: 0.14em;
       text-transform: uppercase;
@@ -339,14 +352,22 @@
 
     /* Placeholder nessuna sessione */
     .no-sessions {
-      padding: var(--s4) var(--s3);
-      border: 1px dashed var(--border-faint);
-      border-radius: var(--r-md);
+      padding: var(--s5) var(--s3);
       text-align: center;
       color: var(--text-lo);
-      font-size: 0.84rem;
+      font-size: 0.82rem;
       font-style: italic;
       letter-spacing: 0.04em;
+    }
+
+    .no-sessions::before {
+      content: '— ';
+      opacity: 0.4;
+    }
+
+    .no-sessions::after {
+      content: ' —';
+      opacity: 0.4;
     }
 
     /* ----------------------------------------------------------
@@ -403,11 +424,14 @@
       box-shadow: var(--shadow-card);
       position: relative;
       overflow: hidden;
-      transition: background var(--ease), border-color var(--ease);
+      transition: background var(--ease), border-color var(--ease),
+                  transform 0.18s ease, box-shadow 0.18s ease;
     }
 
     .session-card:hover {
       background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.50);
     }
 
     /* Barra decorativa sinistra */
@@ -415,12 +439,27 @@
       content: '';
       position: absolute;
       left: 0;
-      top: 12px;
-      bottom: 12px;
+      top: 14px;
+      bottom: 14px;
       width: 2px;
       background: linear-gradient(to bottom, var(--gold), transparent);
       border-radius: 2px;
-      opacity: 0.45;
+      opacity: 0.35;
+    }
+
+    /* Separatore visivo tra ora e contenuto */
+    .session-time-col {
+      position: relative;
+    }
+
+    .session-time-col::after {
+      content: '';
+      position: absolute;
+      right: 0;
+      top: 2px;
+      bottom: 2px;
+      width: 1px;
+      background: linear-gradient(to bottom, var(--border-card), transparent);
     }
 
     /* Card prossima sessione */
@@ -432,6 +471,9 @@
     .session-card--next::before {
       opacity: 1;
       background: var(--gold);
+      top: 0;
+      bottom: 0;
+      width: 3px;
     }
 
     /* Card cancellata */
@@ -488,7 +530,8 @@
     .session-time-col {
       flex-shrink: 0;
       text-align: center;
-      min-width: 52px;
+      min-width: 56px;
+      padding-right: var(--s3);
     }
 
     .session-time {
@@ -996,7 +1039,7 @@
         return hh * 60 + mm >= nowMins;
       });
 
-      return next ? (next.data + next.ora) : null;
+      return next ? (normalizeDate(next.data) + next.ora) : null;
     }
 
     /* ----------------------------------------------------------
@@ -1008,11 +1051,11 @@
       // Aggiorna label range settimana nell'header
       document.getElementById('week-label').textContent = fmtWeekRange(weekStart);
 
-      // Raggruppa le sessioni per chiave YYYY-MM-DD
+      // Raggruppa le sessioni per chiave YYYY-MM-DD (normalizzata)
       const weekRows = filterWeek(allRows, weekStart);
       const byDay = {};
       weekRows.forEach(r => {
-        const k = (r.data || '').trim();
+        const k = normalizeDate(r.data); // usa sempre YYYY-MM-DD come chiave
         if (!byDay[k]) byDay[k] = [];
         byDay[k].push(r);
       });
@@ -1022,14 +1065,23 @@
         arr.sort((a, b) => (a.ora || '').localeCompare(b.ora || ''))
       );
 
+      // Siamo sulla settimana corrente? → nascondi i giorni già passati
+      const todayKey      = toKey(new Date());
+      const thisWeekStart = toKey(getMonday(new Date()));
+      const isCurrentWeek = toKey(weekStart) === thisWeekStart;
+
       // Costruisci HTML per i 7 giorni (lun → dom)
       let html = '';
       for (let i = 0; i < 7; i++) {
         const day = addDays(weekStart, i);
         const key = toKey(day);
+
+        // Nella settimana corrente salta i giorni già trascorsi
+        if (isCurrentWeek && key < todayKey) continue;
+
         const sessions = byDay[key] || [];
-        const oggi = isToday(day);
-        const label = fmtDayFull(day);
+        const oggi     = isToday(day);
+        const label    = fmtDayFull(day);
 
         // Trova prossima sessione solo per oggi
         const nextId = oggi ? findNextId(sessions) : null;
@@ -1052,7 +1104,7 @@
         sessionsHtml = '<p class="no-sessions">Nessun Aufguss programmato</p>';
       } else {
         sessions.forEach(s => {
-          const uid = normalizeDate(s.data) + (s.ora || '');
+          const uid = normalizeDate(s.data) + (s.ora || '').trim();
           const isNext = (uid === nextId);
           sessionsHtml += renderCard(s, isNext);
         });
