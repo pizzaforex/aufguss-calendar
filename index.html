@@ -1,0 +1,1296 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Programma sessioni Aufguss — Gymnasium Club SPA Montecchio Maggiore" />
+  <meta name="theme-color" content="#1a1a2e" />
+  <title>Aufguss Program — Gymnasium Club</title>
+
+  <!-- Google Fonts: Cormorant Garamond (titoli) + DM Sans (UI) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap"
+    rel="stylesheet" />
+
+  <!-- PapaParse v5.4.1 — unica dipendenza esterna, parsing CSV -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- ============================================================
+       STILI — tutto inline, nessun file esterno
+       ============================================================ -->
+  <style>
+    /* ----------------------------------------------------------
+       CSS CUSTOM PROPERTIES
+       Modifica qui colori, spaziature e font per personalizzare
+       ---------------------------------------------------------- */
+    :root {
+      /* Sfondo */
+      --bg-base: #1a1a2e;
+      --bg-layer: #20203d;
+      --bg-card: #262648;
+      --bg-card-hover: #2c2c52;
+
+      /* Accenti brand */
+      --gold: #c9a96e;
+      --gold-light: #dfc08a;
+      --gold-dim: rgba(201, 169, 110, 0.22);
+      --gold-glow: rgba(201, 169, 110, 0.18);
+      --sage: #5b8a72;
+      --sage-light: #7aad92;
+      --sage-dim: rgba(91, 138, 114, 0.18);
+      --sky: #5a8fa8;
+      --sky-dim: rgba(90, 143, 168, 0.18);
+
+      /* Testo */
+      --text-hi: #f0ece3;
+      --text-mid: #a89f93;
+      --text-lo: #6a6258;
+
+      /* Stato sessioni */
+      --red-dim: rgba(180, 55, 55, 0.16);
+      --red-border: rgba(210, 75, 75, 0.40);
+      --red-text: #d97070;
+      --amber-dim: rgba(200, 120, 30, 0.18);
+      --amber-border: rgba(220, 140, 50, 0.45);
+      --amber-text: #d4944a;
+
+      /* Bordi */
+      --border-faint: rgba(255, 255, 255, 0.06);
+      --border-card: rgba(255, 255, 255, 0.09);
+
+      /* Spacing (moltiplicatori di 4px) */
+      --s1: 4px;
+      --s2: 8px;
+      --s3: 12px;
+      --s4: 16px;
+      --s5: 24px;
+      --s6: 32px;
+      --s8: 48px;
+
+      /* Bordi arrotondati */
+      --r-sm: 8px;
+      --r-md: 14px;
+      --r-lg: 20px;
+      --r-xl: 28px;
+
+      /* Ombre */
+      --shadow-card: 0 4px 28px rgba(0, 0, 0, 0.40);
+      --shadow-next: 0 0 0 1.5px var(--gold), 0 4px 32px rgba(201, 169, 110, 0.22);
+
+      /* Transizioni */
+      --ease: 0.28s ease;
+    }
+
+    /* ----------------------------------------------------------
+       RESET & BASE
+       ---------------------------------------------------------- */
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.55;
+      background-color: var(--bg-base);
+      color: var(--text-hi);
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Focus accessibile visibile */
+    :focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 3px;
+      border-radius: var(--r-sm);
+    }
+
+    /* ----------------------------------------------------------
+       HEADER STICKY
+       ---------------------------------------------------------- */
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(26, 26, 46, 0.94);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border-faint);
+      padding: var(--s4) var(--s4) var(--s3);
+    }
+
+    /* Brand / titolo */
+    .brand {
+      text-align: center;
+      margin-bottom: var(--s4);
+    }
+
+    .brand-flame {
+      display: block;
+      font-size: 1.7rem;
+      line-height: 1;
+      margin-bottom: var(--s1);
+    }
+
+    .brand-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.65rem, 6vw, 2.3rem);
+      font-weight: 300;
+      letter-spacing: 0.09em;
+      color: var(--gold);
+      line-height: 1.1;
+    }
+
+    .brand-sub {
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      margin-top: var(--s1);
+    }
+
+    /* Navigazione settimana */
+    .week-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--s2);
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px solid var(--border-card);
+      background: var(--bg-layer);
+      color: var(--gold);
+      font-size: 1.05rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background var(--ease), border-color var(--ease), transform 0.12s ease;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    .nav-btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--gold-dim);
+    }
+
+    .nav-btn:active {
+      transform: scale(0.90);
+    }
+
+    .week-label {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(0.95rem, 4vw, 1.2rem);
+      font-weight: 400;
+      color: var(--text-hi);
+      letter-spacing: 0.03em;
+      text-align: center;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .btn-oggi {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.70rem;
+      font-weight: 500;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--text-mid);
+      background: none;
+      border: 1px solid var(--border-card);
+      border-radius: 20px;
+      padding: 5px 13px;
+      height: 44px;
+      cursor: pointer;
+      transition: color var(--ease), border-color var(--ease);
+      -webkit-tap-highlight-color: transparent;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .btn-oggi:hover {
+      color: var(--gold);
+      border-color: var(--gold-dim);
+    }
+
+    /* ----------------------------------------------------------
+       MAIN CONTENT
+       ---------------------------------------------------------- */
+    main {
+      flex: 1;
+      padding: var(--s4) var(--s4) var(--s8);
+      max-width: 820px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ----------------------------------------------------------
+       SEZIONE GIORNO
+       ---------------------------------------------------------- */
+    .day {
+      margin-bottom: var(--s6);
+      opacity: 0;
+      animation: fadeUp 0.38s ease forwards;
+    }
+
+    /* Delay progressivo per ogni giorno */
+    .day:nth-child(1) {
+      animation-delay: 0.04s;
+    }
+
+    .day:nth-child(2) {
+      animation-delay: 0.09s;
+    }
+
+    .day:nth-child(3) {
+      animation-delay: 0.14s;
+    }
+
+    .day:nth-child(4) {
+      animation-delay: 0.19s;
+    }
+
+    .day:nth-child(5) {
+      animation-delay: 0.24s;
+    }
+
+    .day:nth-child(6) {
+      animation-delay: 0.29s;
+    }
+
+    .day:nth-child(7) {
+      animation-delay: 0.34s;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(12px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .day-hd {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: var(--s2);
+      padding-bottom: var(--s3);
+      margin-bottom: var(--s3);
+      border-bottom: 1px solid var(--border-faint);
+    }
+
+    .day-name {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.1rem, 4.5vw, 1.45rem);
+      font-weight: 400;
+      color: var(--text-hi);
+      letter-spacing: 0.03em;
+    }
+
+    /* Giorno corrente: nome oro */
+    .day--oggi .day-name {
+      color: var(--gold);
+    }
+
+    .day--oggi .day-hd {
+      border-bottom-color: var(--gold-dim);
+    }
+
+    /* Chip "Oggi" */
+    .chip-oggi {
+      font-size: 0.60rem;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--bg-base);
+      background: var(--gold);
+      border-radius: 20px;
+      padding: 2px 9px;
+      align-self: center;
+    }
+
+    /* Placeholder nessuna sessione */
+    .no-sessions {
+      padding: var(--s4) var(--s3);
+      border: 1px dashed var(--border-faint);
+      border-radius: var(--r-md);
+      text-align: center;
+      color: var(--text-lo);
+      font-size: 0.84rem;
+      font-style: italic;
+      letter-spacing: 0.04em;
+    }
+
+    /* ----------------------------------------------------------
+       CARD SESSIONE
+       ---------------------------------------------------------- */
+    .session-wrap {
+      position: relative;
+      margin-bottom: var(--s3);
+    }
+
+    /* Label "PROSSIMA" */
+    .label-next {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s1);
+      font-size: 0.58rem;
+      font-weight: 600;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 5px;
+      padding-left: 2px;
+    }
+
+    .label-next::before {
+      content: '';
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--gold);
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.4;
+        transform: scale(0.7);
+      }
+    }
+
+    .session-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-card);
+      border-radius: var(--r-md);
+      padding: var(--s4);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+      transition: background var(--ease), border-color var(--ease);
+    }
+
+    .session-card:hover {
+      background: var(--bg-card-hover);
+    }
+
+    /* Barra decorativa sinistra */
+    .session-card::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 12px;
+      bottom: 12px;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--gold), transparent);
+      border-radius: 2px;
+      opacity: 0.45;
+    }
+
+    /* Card prossima sessione */
+    .session-card--next {
+      border-color: var(--gold);
+      box-shadow: var(--shadow-next);
+    }
+
+    .session-card--next::before {
+      opacity: 1;
+      background: var(--gold);
+    }
+
+    /* Card cancellata */
+    .session-card--cancelled {
+      background: var(--red-dim);
+      border-color: var(--red-border);
+    }
+
+    .session-card--cancelled::before {
+      background: var(--red-text);
+      opacity: 0.7;
+    }
+
+    .session-card--cancelled .session-time,
+    .session-card--cancelled .session-title {
+      text-decoration: line-through;
+      opacity: 0.55;
+    }
+
+    /* -- Badge stato ------------------------------------------ */
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s1);
+      font-size: 0.63rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      border-radius: var(--r-sm);
+      padding: 2px 8px;
+      margin-bottom: var(--s3);
+    }
+
+    .status-badge--cancelled {
+      color: var(--red-text);
+      background: rgba(200, 70, 70, 0.12);
+      border: 1px solid var(--red-border);
+    }
+
+    .status-badge--modified {
+      color: var(--amber-text);
+      background: var(--amber-dim);
+      border: 1px solid var(--amber-border);
+    }
+
+    /* -- Layout interno card ---------------------------------- */
+    .session-inner {
+      display: flex;
+      gap: var(--s4);
+      align-items: flex-start;
+    }
+
+    /* Blocco orario */
+    .session-time-col {
+      flex-shrink: 0;
+      text-align: center;
+      min-width: 52px;
+    }
+
+    .session-time {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.35rem, 5.5vw, 1.85rem);
+      font-weight: 300;
+      color: var(--gold);
+      line-height: 1;
+      letter-spacing: 0.02em;
+    }
+
+    .session-dur {
+      font-size: 0.70rem;
+      color: var(--text-lo);
+      margin-top: 3px;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    /* Colonna body */
+    .session-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .session-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: clamp(1.0rem, 4vw, 1.25rem);
+      font-weight: 400;
+      color: var(--text-hi);
+      letter-spacing: 0.02em;
+      line-height: 1.25;
+      margin-bottom: var(--s1);
+    }
+
+    .session-desc {
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      line-height: 1.50;
+      margin-bottom: var(--s3);
+      font-style: italic;
+    }
+
+    /* Meta: sauna + maestro */
+    .session-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px var(--s4);
+      font-size: 0.78rem;
+      color: var(--text-mid);
+      margin-bottom: var(--s3);
+    }
+
+    .meta-item {
+      display: flex;
+      align-items: center;
+      gap: var(--s1);
+    }
+
+    /* Badge livello */
+    .level-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--s1);
+      font-size: 0.66rem;
+      font-weight: 500;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      border-radius: 20px;
+      padding: 3px 11px;
+    }
+
+    .level-badge--tutti {
+      color: var(--sage-light);
+      background: var(--sage-dim);
+      border: 1px solid rgba(91, 138, 114, 0.30);
+    }
+
+    .level-badge--soft {
+      color: #7ab5d0;
+      background: var(--sky-dim);
+      border: 1px solid rgba(90, 143, 168, 0.30);
+    }
+
+    .level-badge--esperti {
+      color: var(--gold-light);
+      background: var(--gold-dim);
+      border: 1px solid rgba(201, 169, 110, 0.30);
+    }
+
+    /* Note */
+    .session-notes {
+      margin-top: var(--s3);
+      padding-top: var(--s3);
+      border-top: 1px solid var(--border-faint);
+      font-size: 0.74rem;
+      color: var(--text-lo);
+      font-style: italic;
+      line-height: 1.45;
+    }
+
+    /* ----------------------------------------------------------
+       SKELETON LOADING
+       ---------------------------------------------------------- */
+    .skeleton-section {
+      margin-bottom: var(--s6);
+    }
+
+    .skeleton-line {
+      border-radius: var(--r-sm);
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.7s infinite;
+    }
+
+    .skeleton-hd {
+      height: 18px;
+      width: 38%;
+      margin-bottom: var(--s3);
+    }
+
+    .skeleton-card {
+      height: 96px;
+      border-radius: var(--r-md);
+      margin-bottom: var(--s3);
+    }
+
+    .skeleton-card-s {
+      height: 78px;
+      border-radius: var(--r-md);
+    }
+
+    @keyframes shimmer {
+      0% {
+        background-position: 200% 0;
+      }
+
+      100% {
+        background-position: -200% 0;
+      }
+    }
+
+    /* ----------------------------------------------------------
+       ERRORE
+       ---------------------------------------------------------- */
+    .error-wrap {
+      text-align: center;
+      padding: var(--s8) var(--s4);
+    }
+
+    .error-icon {
+      font-size: 2.4rem;
+      margin-bottom: var(--s4);
+    }
+
+    .error-title {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.35rem;
+      font-weight: 400;
+      color: var(--text-hi);
+      margin-bottom: var(--s2);
+    }
+
+    .error-msg {
+      font-size: 0.86rem;
+      color: var(--text-mid);
+      line-height: 1.65;
+      margin-bottom: var(--s5);
+    }
+
+    .btn-retry {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.80rem;
+      font-weight: 500;
+      letter-spacing: 0.10em;
+      text-transform: uppercase;
+      color: var(--gold);
+      background: none;
+      border: 1px solid var(--gold-dim);
+      border-radius: 30px;
+      padding: 11px 30px;
+      cursor: pointer;
+      transition: background var(--ease), border-color var(--ease);
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .btn-retry:hover {
+      background: var(--gold-dim);
+      border-color: var(--gold);
+    }
+
+    /* ----------------------------------------------------------
+       FOOTER
+       ---------------------------------------------------------- */
+    footer {
+      border-top: 1px solid var(--border-faint);
+      padding: var(--s5) var(--s4);
+      text-align: center;
+    }
+
+    .footer-name {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-size: 1.0rem;
+      font-weight: 400;
+      color: var(--text-mid);
+      letter-spacing: 0.06em;
+      margin-bottom: var(--s1);
+    }
+
+    .footer-addr,
+    .footer-tel {
+      font-size: 0.76rem;
+      color: var(--text-lo);
+      margin-bottom: 2px;
+    }
+
+    .footer-tel a {
+      color: var(--text-lo);
+      text-decoration: none;
+      transition: color var(--ease);
+    }
+
+    .footer-tel a:hover {
+      color: var(--gold);
+    }
+
+    .footer-divider {
+      width: 36px;
+      height: 1px;
+      background: var(--border-card);
+      margin: var(--s4) auto;
+    }
+
+    .footer-refresh-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--s3);
+      flex-wrap: wrap;
+    }
+
+    .footer-updated {
+      font-size: 0.70rem;
+      color: var(--text-lo);
+      letter-spacing: 0.07em;
+    }
+
+    .btn-refresh {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.70rem;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      color: var(--text-lo);
+      background: none;
+      border: 1px solid var(--border-faint);
+      border-radius: 20px;
+      padding: 4px 12px;
+      cursor: pointer;
+      transition: color var(--ease), border-color var(--ease);
+      -webkit-tap-highlight-color: transparent;
+      min-height: 30px;
+    }
+
+    .btn-refresh:hover:not(:disabled) {
+      color: var(--gold);
+      border-color: var(--gold-dim);
+    }
+
+    .btn-refresh:disabled {
+      opacity: 0.45;
+      cursor: default;
+    }
+
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to   { transform: rotate(360deg); }
+    }
+
+    /* ----------------------------------------------------------
+       RESPONSIVE — tablet e desktop (≥ 768px)
+       ---------------------------------------------------------- */
+    @media (min-width: 768px) {
+      main {
+        padding: var(--s5) var(--s6) var(--s8);
+      }
+
+      .session-card {
+        padding: var(--s5);
+      }
+
+      .session-time-col {
+        min-width: 64px;
+      }
+
+      .session-inner {
+        gap: var(--s5);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ============================================================
+       HEADER — Sticky, brand + navigazione settimana
+       ============================================================ -->
+  <header role="banner">
+
+    <div class="brand">
+      <span class="brand-flame" aria-hidden="true">🔥</span>
+      <h1 class="brand-title">Aufguss Program</h1>
+      <p class="brand-sub">Gymnasium Club &mdash; SPA Montecchio</p>
+    </div>
+
+    <nav class="week-nav" aria-label="Navigazione settimana">
+      <button class="nav-btn" id="btn-prev" aria-label="Settimana precedente"
+        onclick="navigateWeek(-1)">&#8592;</button>
+
+      <span class="week-label" id="week-label" aria-live="polite" aria-atomic="true">
+        Caricamento&hellip;
+      </span>
+
+      <button class="nav-btn" id="btn-next" aria-label="Settimana successiva" onclick="navigateWeek(1)">&#8594;</button>
+
+      <button class="btn-oggi" id="btn-oggi" aria-label="Torna alla settimana corrente"
+        onclick="goToToday()">Oggi</button>
+    </nav>
+
+  </header>
+
+  <!-- ============================================================
+       CONTENUTO PRINCIPALE — generato da JS
+       ============================================================ -->
+  <main id="main" role="main" aria-label="Calendario sessioni Aufguss">
+    <!-- Skeleton iniziale mostrato subito, sostituito dai dati reali -->
+  </main>
+
+  <!-- ============================================================
+       FOOTER — info contatto + timestamp aggiornamento
+       ============================================================ -->
+  <footer role="contentinfo">
+    <p class="footer-name">Gymnasium Club Montecchio</p>
+    <p class="footer-addr">Piazza Giovanni Carli, 11 &mdash; Montecchio Maggiore (VI)</p>
+    <p class="footer-tel"><a href="tel:+390444694950">0444&thinsp;694950</a></p>
+    <div class="footer-divider" aria-hidden="true"></div>
+    <div class="footer-refresh-row">
+      <p class="footer-updated" id="last-updated" aria-live="polite"></p>
+      <button class="btn-refresh" id="btn-refresh" onclick="manualRefresh()" aria-label="Aggiorna dati ora">
+        <span id="refresh-icon">↺</span> Aggiorna
+      </button>
+    </div>
+  </footer>
+
+  <!-- ============================================================
+       JAVASCRIPT — tutto inline, nessun file esterno
+       ============================================================ -->
+  <script>
+    /* ----------------------------------------------------------
+       CONFIGURAZIONE
+       Cerca PLACEHOLDER_SHEET_ID con Ctrl+F e sostituiscilo con
+       l'ID reale del tuo Google Sheet pubblicato come CSV.
+       Esempio di URL finale:
+       https://docs.google.com/spreadsheets/d/e/2PACX-1vABC...XYZ/pub?gid=0&single=true&output=csv
+       ---------------------------------------------------------- */
+    const CSV_URL =
+      'https://docs.google.com/spreadsheets/d/e/2PACX-1vRTwkroN2CV2q7G8CKaE3A6sJUQREa9gYc29djstELDutVpYyQPCbGMjqYO2MvqeroTM6HLgiXXq1Hn/pub?gid=0&single=true&output=csv';
+
+    const REFRESH_MS = 10 * 60 * 1000; // Auto-refresh ogni 10 min (solo quando scheda visibile)
+
+    /* ----------------------------------------------------------
+       STATO GLOBALE
+       ---------------------------------------------------------- */
+    let weekStart = getMonday(new Date()); // Lunedì settimana corrente
+    let allRows = [];                    // Tutti i dati CSV
+
+    /* ----------------------------------------------------------
+       UTILITY — Date
+       ---------------------------------------------------------- */
+
+    /** Restituisce la data del lunedì della settimana di `date` */
+    function getMonday(date) {
+      const d = new Date(date);
+      const dow = d.getDay(); // 0=dom, 1=lun, …, 6=sab
+      const diff = (dow === 0) ? -6 : 1 - dow;
+      d.setDate(d.getDate() + diff);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    }
+
+    /** Copia di `date` spostata di `n` giorni */
+    function addDays(date, n) {
+      const d = new Date(date);
+      d.setDate(d.getDate() + n);
+      return d;
+    }
+
+    /**
+     * Normalizza qualsiasi formato data dal CSV → stringa YYYY-MM-DD.
+     * Gestisce sia "2026-03-26" (YYYY-MM-DD) sia "26/03/2026" (DD/MM/YYYY).
+     * Restituisce la stringa originale se non riconosce il formato.
+     */
+    function normalizeDate(raw) {
+      const s = (raw || '').trim();
+      // Già nel formato corretto YYYY-MM-DD
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+      // Formato italiano DD/MM/YYYY o DD-MM-YYYY
+      const m = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (m) return `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+      return s; // fallback: restituisce com'è
+    }
+
+    /** Stringa YYYY-MM-DD per la data locale */
+    function toKey(date) {
+      return [
+        date.getFullYear(),
+        String(date.getMonth() + 1).padStart(2, '0'),
+        String(date.getDate()).padStart(2, '0')
+      ].join('-');
+    }
+
+    /** true se `date` è oggi */
+    function isToday(date) {
+      return toKey(date) === toKey(new Date());
+    }
+
+    /** Formatta data per il titolo del giorno: "Lunedì 30 Marzo" */
+    function fmtDayFull(date) {
+      const s = date.toLocaleDateString('it-IT', {
+        weekday: 'long', day: 'numeric', month: 'long'
+      });
+      return s.charAt(0).toUpperCase() + s.slice(1);
+    }
+
+    /** Formatta range settimana: "24 marzo – 30 marzo 2026" */
+    function fmtWeekRange(start) {
+      const end = addDays(start, 6);
+      const s = start.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+      const e = end.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
+      return `${s} – ${e}`;
+    }
+
+    /** Formatta ora da stringa "HH:MM" */
+    function fmtTime(str) {
+      return (str || '—').trim().substring(0, 5);
+    }
+
+    /* ----------------------------------------------------------
+       ESCAPE HTML — previene XSS dai dati del foglio
+       ---------------------------------------------------------- */
+    function esc(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    /* ----------------------------------------------------------
+       FETCH DATA — scarica e parsa il CSV con PapaParse
+       ---------------------------------------------------------- */
+    function fetchData() {
+      Papa.parse(CSV_URL, {
+        download: true,
+        header: true,
+        skipEmptyLines: true,
+        complete: function (res) {
+          allRows = res.data || [];
+          renderCalendar();
+          stampLastUpdated();
+        },
+        error: function () {
+          renderError();
+        }
+      });
+    }
+
+    /* ----------------------------------------------------------
+       FILTER WEEK — filtra le righe per la settimana visualizzata
+       ---------------------------------------------------------- */
+    function filterWeek(rows, start) {
+      const from = toKey(start);
+      const to = toKey(addDays(start, 6));
+      return rows.filter(r => {
+        const d = normalizeDate(r.data);
+        return d >= from && d <= to;
+      });
+    }
+
+    /* ----------------------------------------------------------
+       HIGHLIGHT NEXT — trova la prossima sessione di oggi
+       Restituisce l'ID univoco (data+ora) della prossima, o null
+       ---------------------------------------------------------- */
+    function findNextId(daySessions) {
+      if (!daySessions.length) return null;
+      const now = new Date();
+      const todayK = toKey(now);
+      const nowMins = now.getHours() * 60 + now.getMinutes();
+
+      const next = daySessions.find(s => {
+        if (normalizeDate(s.data) !== todayK) return false;
+        if ((s.stato || '').trim() === 'cancellato') return false;
+        const [hh, mm] = (s.ora || '00:00').split(':').map(Number);
+        return hh * 60 + mm >= nowMins;
+      });
+
+      return next ? (next.data + next.ora) : null;
+    }
+
+    /* ----------------------------------------------------------
+       RENDER — CALENDAR
+       ---------------------------------------------------------- */
+    function renderCalendar() {
+      const main = document.getElementById('main');
+
+      // Aggiorna label range settimana nell'header
+      document.getElementById('week-label').textContent = fmtWeekRange(weekStart);
+
+      // Raggruppa le sessioni per chiave YYYY-MM-DD
+      const weekRows = filterWeek(allRows, weekStart);
+      const byDay = {};
+      weekRows.forEach(r => {
+        const k = (r.data || '').trim();
+        if (!byDay[k]) byDay[k] = [];
+        byDay[k].push(r);
+      });
+
+      // Ordina ogni giornata per orario
+      Object.values(byDay).forEach(arr =>
+        arr.sort((a, b) => (a.ora || '').localeCompare(b.ora || ''))
+      );
+
+      // Costruisci HTML per i 7 giorni (lun → dom)
+      let html = '';
+      for (let i = 0; i < 7; i++) {
+        const day = addDays(weekStart, i);
+        const key = toKey(day);
+        const sessions = byDay[key] || [];
+        const oggi = isToday(day);
+        const label = fmtDayFull(day);
+
+        // Trova prossima sessione solo per oggi
+        const nextId = oggi ? findNextId(sessions) : null;
+
+        html += renderDay(day, label, sessions, oggi, nextId);
+      }
+
+      main.innerHTML = html;
+    }
+
+    /* ----------------------------------------------------------
+       RENDER — GIORNO
+       ---------------------------------------------------------- */
+    function renderDay(date, label, sessions, oggi, nextId) {
+      const todayClass = oggi ? ' day--oggi' : '';
+      const chipOggi = oggi ? '<span class="chip-oggi" aria-label="Oggi">Oggi</span>' : '';
+
+      let sessionsHtml = '';
+      if (sessions.length === 0) {
+        sessionsHtml = '<p class="no-sessions">Nessun Aufguss programmato</p>';
+      } else {
+        sessions.forEach(s => {
+          const uid = normalizeDate(s.data) + (s.ora || '');
+          const isNext = (uid === nextId);
+          sessionsHtml += renderCard(s, isNext);
+        });
+      }
+
+      return `
+        <section class="day${todayClass}" aria-label="${esc(label)}">
+          <div class="day-hd">
+            <h2 class="day-name">${esc(label)}</h2>
+            ${chipOggi}
+          </div>
+          ${sessionsHtml}
+        </section>
+      `;
+    }
+
+    /* ----------------------------------------------------------
+       RENDER — CARD SESSIONE
+       ---------------------------------------------------------- */
+    function renderCard(s, isNext) {
+      const stato = (s.stato || '').trim().toLowerCase();
+      const livello = (s.livello || '').trim().toLowerCase();
+
+      const cancelled = stato === 'cancellato';
+      const modified = stato === 'modificato';
+
+      const ora = esc(fmtTime(s.ora));
+      const durata = s.durata ? `⏱ ${esc(s.durata)} min` : '';
+      const titolo = esc(s.titolo || '—');
+      const desc = esc(s.descrizione || '');
+      const sauna = esc(s.sauna || '');
+      const maestro = esc(s.aufgussmeister || '');
+      const note = esc(s.note || '');
+
+      // Classi card
+      let cardCls = 'session-card';
+      if (isNext) cardCls += ' session-card--next';
+      if (cancelled) cardCls += ' session-card--cancelled';
+
+      // Badge stato
+      let statoBadge = '';
+      if (cancelled) {
+        statoBadge = `
+          <div class="status-badge status-badge--cancelled" role="status">
+            ✕ Cancellato
+          </div>`;
+      } else if (modified) {
+        statoBadge = `
+          <div class="status-badge status-badge--modified" role="status">
+            ✎ Modificato
+          </div>`;
+      }
+
+      // Badge livello
+      let levelBadge = '';
+      if (livello === 'tutti') {
+        levelBadge = `<span class="level-badge level-badge--tutti" aria-label="Livello: tutti">🌿 Tutti</span>`;
+      } else if (livello === 'soft') {
+        levelBadge = `<span class="level-badge level-badge--soft" aria-label="Livello: soft">💧 Soft</span>`;
+      } else if (livello === 'esperti') {
+        levelBadge = `<span class="level-badge level-badge--esperti" aria-label="Livello: esperti">🔥 Esperti</span>`;
+      }
+
+      // Meta: sauna e maestro
+      let metaHtml = '';
+      if (sauna) metaHtml += `<span class="meta-item"><span aria-hidden="true">🧖</span> ${sauna}</span>`;
+      if (maestro) metaHtml += `<span class="meta-item"><span aria-hidden="true">👤</span> ${maestro}</span>`;
+
+      // Label prossima
+      const nextLabel = isNext
+        ? `<span class="label-next" aria-label="Prossima sessione">Prossima</span>`
+        : '';
+
+      return `
+        <div class="session-wrap">
+          ${nextLabel}
+          <article class="${cardCls}" aria-label="Sessione: ${titolo} alle ${ora}">
+            ${statoBadge}
+            <div class="session-inner">
+              <div class="session-time-col">
+                <div class="session-time" aria-label="Orario ${ora}">${ora}</div>
+                ${durata ? `<div class="session-dur">${durata}</div>` : ''}
+              </div>
+              <div class="session-body">
+                <h3 class="session-title">${titolo}</h3>
+                ${desc ? `<p class="session-desc">${desc}</p>` : ''}
+                ${metaHtml ? `<div class="session-meta" aria-label="Dettagli sessione">${metaHtml}</div>` : ''}
+                ${levelBadge}
+              </div>
+            </div>
+            ${note ? `<p class="session-notes">📝 ${note}</p>` : ''}
+          </article>
+        </div>
+      `;
+    }
+
+    /* ----------------------------------------------------------
+       RENDER — SKELETON LOADING
+       ---------------------------------------------------------- */
+    function renderSkeleton() {
+      const main = document.getElementById('main');
+      document.getElementById('week-label').textContent = 'Caricamento…';
+
+      let html = '';
+      for (let i = 0; i < 4; i++) {
+        const cards = (i % 2 === 0)
+          ? `<div class="skeleton-line skeleton-card"></div><div class="skeleton-line skeleton-card-s"></div>`
+          : `<div class="skeleton-line skeleton-card"></div>`;
+        html += `
+          <div class="skeleton-section" aria-hidden="true">
+            <div class="skeleton-line skeleton-hd"></div>
+            ${cards}
+          </div>`;
+      }
+
+      main.innerHTML = html;
+    }
+
+    /* ----------------------------------------------------------
+       RENDER — ERRORE
+       ---------------------------------------------------------- */
+    function renderError() {
+      const main = document.getElementById('main');
+      main.innerHTML = `
+        <div class="error-wrap" role="alert" aria-live="assertive">
+          <div class="error-icon" aria-hidden="true">🌫️</div>
+          <h2 class="error-title">Programma non disponibile</h2>
+          <p class="error-msg">
+            Impossibile caricare il programma.<br>
+            Riprova tra qualche minuto.
+          </p>
+          <button class="btn-retry" onclick="retryFetch()" aria-label="Riprova a caricare">
+            Riprova
+          </button>
+        </div>
+      `;
+    }
+
+    /* ----------------------------------------------------------
+       NAVIGATE WEEK — sposta la visualizzazione di ±1 settimana
+       ---------------------------------------------------------- */
+    function navigateWeek(direction) {
+      weekStart = addDays(weekStart, direction * 7);
+      renderCalendar();
+      // Torna in cima (utile su mobile)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /** Torna alla settimana corrente */
+    function goToToday() {
+      weekStart = getMonday(new Date());
+      renderCalendar();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /** Retry manuale dopo errore */
+    function retryFetch() {
+      renderSkeleton();
+      fetchData();
+    }
+
+    /** Aggiorna il timestamp nel footer */
+    function stampLastUpdated() {
+      const el = document.getElementById('last-updated');
+      if (!el) return;
+      const t = new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+      el.textContent = `Aggiornato alle ${t}`;
+    }
+
+    /* ----------------------------------------------------------
+       REFRESH MANUALE — bottone nel footer
+       ---------------------------------------------------------- */
+    function manualRefresh() {
+      const icon = document.getElementById('refresh-icon');
+      const btn  = document.getElementById('btn-refresh');
+      if (!icon || !btn) return;
+
+      // Animazione rotazione icona durante il fetch
+      icon.style.display      = 'inline-block';
+      icon.style.animation    = 'spin 0.8s linear infinite';
+      btn.disabled            = true;
+
+      Papa.parse(CSV_URL, {
+        download:       true,
+        header:         true,
+        skipEmptyLines: true,
+        complete: function(res) {
+          allRows = res.data || [];
+          renderCalendar();
+          stampLastUpdated();
+          icon.style.animation = '';
+          btn.disabled         = false;
+        },
+        error: function() {
+          renderError();
+          icon.style.animation = '';
+          btn.disabled         = false;
+        }
+      });
+    }
+
+    /* ----------------------------------------------------------
+       REFRESH SMART — pausa quando la scheda non è visibile,
+       aggiorna subito al ritorno in primo piano
+       ---------------------------------------------------------- */
+    let refreshTimer = null;
+
+    function startRefreshTimer() {
+      stopRefreshTimer();
+      refreshTimer = setInterval(fetchData, REFRESH_MS);
+    }
+
+    function stopRefreshTimer() {
+      if (refreshTimer) {
+        clearInterval(refreshTimer);
+        refreshTimer = null;
+      }
+    }
+
+    document.addEventListener('visibilitychange', function() {
+      if (document.hidden) {
+        // Scheda nascosta: ferma il timer per non sprecare fetch
+        stopRefreshTimer();
+      } else {
+        // Scheda tornata visibile: aggiorna subito + riavvia timer
+        fetchData();
+        startRefreshTimer();
+      }
+    });
+
+    /* ----------------------------------------------------------
+       AVVIO
+       ---------------------------------------------------------- */
+    renderSkeleton();
+    fetchData();
+    startRefreshTimer();
+  </script>
+
+</body>
+
+</html>
